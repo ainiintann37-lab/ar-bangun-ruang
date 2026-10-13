@@ -1,10 +1,11 @@
 /* ==========================================================
-   AR Module — MindAR versi UMD (1.1.5) + THREE global
+   AR Module — MindAR + Three.js (ESM via importmap)
+   Versi Final: objek nempel marker + ukuran pas + debug log
    ========================================================== */
 import * as THREE from 'three';
 import { MindARThree } from 'mind-ar';
 
-   (function() {
+(function() {
   let mindar = null;
   let anchorMap = {};
   let currentMode = null;
@@ -17,16 +18,9 @@ import { MindARThree } from 'mind-ar';
   function createMindAR(containerEl, mode) {
     destroyMindAR();
 
-    if (typeof window.MINDAR === 'undefined' ||
-        !window.MINDAR.IMAGE ||
-        !window.MINDAR.IMAGE.MindARThree) {
-      showError('MindAR tidak termuat. Cek koneksi internet atau CDN MindAR.', mode);
-      return null;
-    }
-
     let instance;
     try {
-      instance = new window.MINDAR.IMAGE.MindARThree({
+      instance = new MindARThree({
         container: containerEl,
         imageTargetSrc: 'markers/targets.mind',
         maxTrack: 2,
@@ -43,6 +37,9 @@ import { MindARThree } from 'mind-ar';
     const d = new THREE.DirectionalLight(0xffffff, 0.95);
     d.position.set(1, 3, 2);
     instance.scene.add(d);
+    const d2 = new THREE.DirectionalLight(0xffffff, 0.5);
+    d2.position.set(-2, -1, -2);
+    instance.scene.add(d2);
 
     const order = ['kubus', 'balok', 'tabung', 'kerucut', 'bola'];
     anchorMap = {};
@@ -50,9 +47,11 @@ import { MindARThree } from 'mind-ar';
       const anchor = instance.addAnchor(i);
       anchor.group.visible = false;
       anchor.group.add(buildModelFor(key));
-const lbl = buildLabel(window.SHAPES[key].nama);
-lbl.position.set(0, 6, 0);  // 6 satuan di atas — di atas kubus
-anchor.group.add(lbl);
+      
+      const lbl = buildLabel(window.SHAPES[key].nama);
+      lbl.position.set(0, 3, 0);  // di atas objek 3D
+      anchor.group.add(lbl);
+      
       anchor.userData = { shapeKey: key };
       anchorMap[key] = anchor;
     });
@@ -69,30 +68,34 @@ anchor.group.add(lbl);
     handlersAttached = false;
   }
 
-function buildModelFor(key) {
-  const S = window.SHAPES[key];
-  const color = new THREE.Color(S.warna);
-  const m = new THREE.MeshStandardMaterial({
-    color: color, roughness: 0.35, metalness: 0.15, side: THREE.DoubleSide
-  });
-  let mesh;
-  // UKURAN DIPERBESAR 5x
-  switch (key) {
-    case 'kubus':   mesh = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 5), m); break;
-    case 'balok':   mesh = new THREE.Mesh(new THREE.BoxGeometry(7, 4, 5), m); break;
-    case 'tabung':  mesh = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 6, 40), m); break;
-    case 'kerucut': mesh = new THREE.Mesh(new THREE.ConeGeometry(3, 6, 40), m); break;
-    case 'bola':    mesh = new THREE.Mesh(new THREE.SphereGeometry(3.5, 36, 24), m); break;
+  /* ===== Model 3D — ukuran proporsional, warna cerah ===== */
+  function buildModelFor(key) {
+    const S = window.SHAPES[key];
+    const color = new THREE.Color(S.warna);
+    const mat = new THREE.MeshStandardMaterial({
+      color: color,
+      roughness: 0.35,
+      metalness: 0.15,
+      side: THREE.DoubleSide
+    });
+    
+    let mesh;
+    switch (key) {
+      case 'kubus':   mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), mat); break;
+      case 'balok':   mesh = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 2), mat); break;
+      case 'tabung':  mesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 2.2, 40), mat); break;
+      case 'kerucut': mesh = new THREE.Mesh(new THREE.ConeGeometry(1.1, 2.2, 40), mat); break;
+      case 'bola':    mesh = new THREE.Mesh(new THREE.SphereGeometry(1.3, 36, 24), mat); break;
+    }
+    if (mesh) {
+      mesh.position.set(0, 1, 0);  // 1 satuan di atas marker
+      mesh.add(new THREE.LineSegments(
+        new THREE.EdgesGeometry(mesh.geometry),
+        new THREE.LineBasicMaterial({ color: 0x213547 })
+      ));
+    }
+    return mesh;
   }
-  if (mesh) {
-    mesh.position.y = 3;  // 3 satuan di atas marker (biar tidak tenggelam)
-    mesh.add(new THREE.LineSegments(
-      new THREE.EdgesGeometry(mesh.geometry),
-      new THREE.LineBasicMaterial({ color: 0x213547 })
-    ));
-  }
-  return mesh;
-}
 
   function buildLabel(text) {
     const canvas = document.createElement('canvas');
@@ -143,59 +146,45 @@ function buildModelFor(key) {
     Object.values(anchorMap).forEach(a => { a.group.visible = false; });
   }
 
-function handleDetection(detected, mode) {
-  console.log('🎯 DETECTED:', detected, '| SELECTED:', selectedShape());
-  const selected = selectedShape();
-  if (!selected) {
-    updateUI(mode, 'wrong', 'Belum ada bangun ruang yang dipilih.');
-    hideAllAnchors();
-    return;
-  }
-  if (detected === selected) {
-    hideAllAnchors();
-    const a = anchorMap[detected];
-    
-    console.log('🔍 Anchor:', a);
-    if (a) {
-      console.log('🔍 Group visible BEFORE:', a.group.visible);
-      a.group.visible = true;
-      console.log('🔍 Group visible AFTER:', a.group.visible);
-      console.log('🔍 Group children count:', a.group.children.length);
-      
-      a.group.children.forEach((child, i) => {
-        console.log(`  [${i}] type:`, child.type);
-        console.log(`      position:`, child.position.x.toFixed(2), child.position.y.toFixed(2), child.position.z.toFixed(2));
-        console.log(`      scale:`, child.scale.x, child.scale.y, child.scale.z);
-        console.log(`      visible:`, child.visible);
-        if (child.geometry) {
-          console.log(`      geometry:`, child.geometry.type);
-          child.geometry.computeBoundingBox();
-          const bb = child.geometry.boundingBox;
-          console.log(`      size:`, 
-            (bb.max.x - bb.min.x).toFixed(2),
-            (bb.max.y - bb.min.y).toFixed(2),
-            (bb.max.z - bb.min.z).toFixed(2)
-          );
-        }
-        if (child.material) {
-          console.log(`      material color:`, child.material.color ? child.material.color.getHexString() : 'N/A');
-          console.log(`      material opacity:`, child.material.opacity);
-          console.log(`      material visible:`, child.material.visible);
-        }
-      });
+  function handleDetection(detected, mode) {
+    const selected = selectedShape();
+    if (!selected) {
+      updateUI(mode, 'wrong', 'Belum ada bangun ruang yang dipilih.');
+      hideAllAnchors();
+      return;
     }
-    
-    updateUI(mode, 'success',
-      '✅ Hebat! Kamu berhasil menemukan bangun ruang ' + shapeName(detected) + '!');
-    if (window.playBeep) window.playBeep('ok');
-  } else {
-    hideAllAnchors();
-    updateUI(mode, 'wrong',
-      'Ups! Ini bukan ' + shapeName(selected) + '. Kamu sedang memindai ' + shapeName(detected) +
-      '. Ayo cari marker ' + shapeName(selected) + ' yang benar!');
-    if (window.playBeep) window.playBeep('no');
+    if (detected === selected) {
+      hideAllAnchors();
+      const a = anchorMap[detected];
+      if (a) a.group.visible = true;
+
+      // Debug log (bisa dihapus nanti)
+      console.log('=== DEBUG MARKER ===');
+      console.log('Detected:', detected, '| Selected:', selected);
+      console.log('Anchor group visible:', a ? a.group.visible : 'null');
+      console.log('Children count:', a ? a.group.children.length : 0);
+      if (a && a.group.children[0]) {
+        const c = a.group.children[0];
+        console.log('Child type:', c.type, '| pos:', c.position, '| scale:', c.scale);
+        if (c.geometry) {
+          c.geometry.computeBoundingBox();
+          const bb = c.geometry.boundingBox;
+          console.log('Size:', bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z);
+        }
+      }
+      console.log('=== END DEBUG ===');
+
+      updateUI(mode, 'success',
+        '✅ Hebat! Kamu berhasil menemukan bangun ruang ' + shapeName(detected) + '!');
+      if (window.playBeep) window.playBeep('ok');
+    } else {
+      hideAllAnchors();
+      updateUI(mode, 'wrong',
+        'Ups! Ini bukan ' + shapeName(selected) + '. Kamu sedang memindai ' + shapeName(detected) +
+        '. Ayo cari marker ' + shapeName(selected) + ' yang benar!');
+      if (window.playBeep) window.playBeep('no');
+    }
   }
-}
 
   function updateUI(mode, state, msg) {
     if (mode === 'page') {
@@ -282,6 +271,17 @@ function handleDetection(detected, mode) {
 
   async function startCamera() {
     const container = document.getElementById('ar-container');
+
+    // Bersihkan video/canvas lama
+    [...container.children].forEach(child => {
+      if (!child.classList.contains('ar-overlay') &&
+          !child.id.includes('overlay') &&
+          !child.classList.contains('ar-badge') &&
+          !child.classList.contains('ar-scan-hint')) {
+        container.removeChild(child);
+      }
+    });
+
     currentMode = 'page';
     mindar = createMindAR(container, 'page');
     if (!mindar) return;
@@ -310,6 +310,16 @@ function handleDetection(detected, mode) {
     document.getElementById('learn-ar-shape-2').textContent = shapeName(shapeKey);
 
     const container = document.getElementById('learn-ar-container');
+
+    // Bersihkan video/canvas lama
+    [...container.children].forEach(child => {
+      if (!child.classList.contains('learn-ar-overlay') &&
+          !child.classList.contains('learn-ar-badge') &&
+          !child.classList.contains('learn-ar-hint')) {
+        container.removeChild(child);
+      }
+    });
+
     currentMode = 'learn';
     mindar = createMindAR(container, 'learn');
     if (!mindar) return;
