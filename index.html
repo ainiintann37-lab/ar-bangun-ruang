@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Petualangan Bangun Ruang — Belajar dengan AR</title>
+<link rel="stylesheet" href="style.css" />
+
+<!-- Three.js r128 (UMD, mendukung OrbitControls non-module) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<!-- MindAR versi UMD (bukan ESM) -->
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
+</head>
+<body>
+
+<!-- ================= HOME PAGE ================= -->
+<section id="page-home" class="page active">
+  <div class="home-wrap">
+    <div class="home-illustration">
+      <div class="float-shape cube"></div>
+      <div class="float-shape sphere"></div>
+      <div class="float-shape cone"></div>
+      <div class="float-shape cylinder"></div>
+    </div>
+    <h1 class="home-title">Petualangan Bangun Ruang</h1>
+    <p class="home-subtitle">
+      Ayo jelajahi dunia <strong>Kubus, Balok, Tabung, Kerucut,</strong> dan <strong>Bola</strong>!
+      Belajar bentuk, jaring-jaring, rumus, dan melihatnya dalam <em>Augmented Reality</em>.
+    </p>
+    <button class="btn btn-primary btn-big" id="btn-start">🚀 Mulai Petualangan</button>
+    <p class="home-footer">Media Pembelajaran Matematika untuk Anak SD</p>
+  </div>
+</section>
+
+<!-- ================= SHAPE MENU PAGE ================= -->
+<section id="page-menu" class="page">
+  <header class="topbar">
+    <button class="btn btn-icon" id="btn-home-1">🏠</button>
+    <h2 class="topbar-title">Pilih Bangun Ruang</h2>
+    <div class="topbar-spacer"></div>
+  </header>
+
+  <div class="menu-grid" id="menu-grid"></div>
+
+  <div class="menu-extra">
+    <button class="btn btn-secondary" id="btn-open-quiz">📝 Mulai Kuis</button>
+  </div>
+</section>
+
+<!-- ================= LEARNING PAGE ================= -->
+<section id="page-learn" class="page">
+  <header class="topbar">
+    <button class="btn btn-icon" id="btn-home-2">🏠</button>
+    <button class="btn btn-icon" id="btn-back-menu">⬅️</button>
+    <h2 class="topbar-title" id="learn-title">Kubus</h2>
+    <div class="topbar-actions">
+      <button class="btn btn-small" id="btn-toggle-sound">🔊</button>
+      <button class="btn btn-small btn-ar" id="btn-open-ar">📷 AR Layar Penuh</button>
+    </div>
+  </header>
+
+  <div class="learn-wrap">
+    <!-- LEFT: AR langsung + 3D + Jaring-jaring -->
+    <div class="learn-left" id="learn-left">
+      <!-- Panel AR langsung (default) -->
+      <div id="learn-ar-container" class="learn-ar-container">
+        <div id="learn-ar-overlay" class="learn-ar-overlay">
+          <div class="learn-ar-card">
+            <div class="learn-ar-icon">📷</div>
+            <h3>Ayo Scan Marker <span id="learn-ar-shape">Kubus</span></h3>
+            <p>Izinkan kamera, lalu arahkan ke marker <strong id="learn-ar-shape-2">Kubus</strong>.</p>
+            <button class="btn btn-primary" id="btn-learn-ar-start">Mulai Kamera</button>
+            <p class="learn-ar-note">Belum punya marker? Klik <em>Bentuk 3D</em> atau <em>Jaring-Jaring</em> di bawah.</p>
+          </div>
+        </div>
+        <div id="learn-ar-badge" class="learn-ar-badge hidden"></div>
+        <div id="learn-ar-hint" class="learn-ar-hint hidden">🔍 Arahkan ke marker…</div>
+      </div>
+
+      <!-- Panel 3D Three.js (disembunyikan, muncul saat diklik) -->
+      <div id="learn-3d-container" class="learn-3d-container hidden">
+        <canvas id="canvas-3d"></canvas>
+        <div class="canvas-hint">🖱️ Geser untuk memutar · Gulir untuk zoom</div>
+      </div>
+
+      <!-- Kontrol bawah -->
+      <div class="canvas-controls">
+        <button class="btn btn-small" id="btn-view-ar">📷 Kamera AR</button>
+        <button class="btn btn-small" id="btn-view-solid">🔷 Bentuk 3D</button>
+        <button class="btn btn-small" id="btn-view-net">📐 Jaring-Jaring</button>
+        <button class="btn btn-small hidden" id="btn-reset-3d">🔄 Reset</button>
+        <button class="btn btn-small hidden" id="btn-zoom-in">➕</button>
+        <button class="btn btn-small hidden" id="btn-zoom-out">➖</button>
+      </div>
+      <div id="net-controls" class="net-controls hidden">
+        <button class="btn btn-small" id="btn-fold-anim">▶️ Ulangi Animasi Lipat</button>
+        <button class="btn btn-small" id="btn-back-3d">🔷 Kembali ke Bentuk 3D</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: materi -->
+    <div class="learn-right" id="learn-material"></div>
+  </div>
+</section>
+
+<!-- ================= QUIZ PAGE ================= -->
+<section id="page-quiz" class="page">
+  <header class="topbar">
+    <button class="btn btn-icon" id="btn-home-3">🏠</button>
+    <button class="btn btn-icon" id="btn-quiz-back">⬅️</button>
+    <h2 class="topbar-title">Kuis Bangun Ruang</h2>
+    <div class="topbar-spacer"></div>
+  </header>
+
+  <div class="quiz-wrap">
+    <div id="quiz-header">
+      <span id="quiz-progress">Pertanyaan 1 / 10</span>
+      <span id="quiz-score">Skor: 0</span>
+    </div>
+    <div id="quiz-body">
+      <p id="quiz-question">…</p>
+      <div id="quiz-options" class="quiz-options"></div>
+      <div id="quiz-feedback" class="quiz-feedback hidden"></div>
+      <button class="btn btn-primary" id="quiz-next" disabled>Lanjut ➡️</button>
+    </div>
+    <div id="quiz-result" class="quiz-result hidden">
+      <h3>🎉 Selesai!</h3>
+      <p id="quiz-final-score">Skor akhir: 0 / 10</p>
+      <p id="quiz-message"></p>
+      <button class="btn btn-primary" id="quiz-restart">🔄 Ulangi Kuis</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AR FULL PAGE ================= -->
+<section id="page-ar" class="page">
+  <header class="topbar ar-topbar">
+    <button class="btn btn-icon" id="btn-ar-exit">✖️ Keluar</button>
+    <h2 class="topbar-title">Mode AR — <span id="ar-target-name">Kubus</span></h2>
+    <button class="btn btn-icon" id="btn-ar-help">❓</button>
+  </header>
+
+  <div id="ar-container">
+    <div id="ar-overlay-instructions" class="ar-overlay">
+      <div class="ar-card">
+        <h3>📷 Petunjuk Penggunaan AR</h3>
+        <ol>
+          <li>Izinkan akses kamera saat diminta.</li>
+          <li>Arahkan kamera ke <strong>marker <span id="ar-instr-shape">Kubus</span></strong>.</li>
+          <li>Pastikan pencahayaan cukup dan marker terlihat jelas.</li>
+          <li>Objek 3D akan muncul jika marker sesuai dengan pilihanmu.</li>
+        </ol>
+        <button class="btn btn-primary" id="btn-ar-start">Mulai Kamera</button>
+        <button class="btn btn-secondary" id="btn-ar-cancel">Batal</button>
+      </div>
+    </div>
+
+    <div id="ar-overlay-wrong" class="ar-overlay hidden">
+      <div class="ar-card ar-card-warn">
+        <div class="warn-icon">⚠️</div>
+        <h3>Ups! Marker Tidak Sesuai</h3>
+        <p id="ar-wrong-msg"></p>
+        <button class="btn btn-primary" id="btn-ar-retry">🔁 Coba Scan Lagi</button>
+        <button class="btn btn-secondary" id="btn-ar-back-menu">⬅️ Kembali ke Pilihan</button>
+      </div>
+    </div>
+
+    <div id="ar-overlay-success" class="ar-badge hidden"></div>
+    <div id="ar-overlay-scan" class="ar-scan-hint">🔍 Arahkan ke marker…</div>
+
+    <div id="ar-error" class="ar-overlay hidden">
+      <div class="ar-card ar-card-warn">
+        <h3>Kamera Tidak Dapat Digunakan</h3>
+        <p id="ar-error-msg"></p>
+        <button class="btn btn-secondary" id="btn-ar-error-close">Tutup</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script type="module" src="script.js"></script>
+<script type="module" src="shape3d.js"></script>
+<script type="module" src="ar.js"></script>
+<script type="module" src="quiz.js"></script>
+</body>
+</html>
