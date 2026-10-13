@@ -88,7 +88,7 @@ import { MindARThree } from 'mind-ar';
       case 'bola':    mesh = new THREE.Mesh(new THREE.SphereGeometry(1.3, 36, 24), mat); break;
     }
     if (mesh) {
-      mesh.position.set(0, 1, 0);  // 1 satuan di atas marker
+      mesh.position.set(0, 5, 0);  // 1 satuan di atas marker
       mesh.add(new THREE.LineSegments(
         new THREE.EdgesGeometry(mesh.geometry),
         new THREE.LineBasicMaterial({ color: 0x213547 })
