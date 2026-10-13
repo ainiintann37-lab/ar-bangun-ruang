@@ -1,6 +1,6 @@
 /* ==========================================================
    Scene3D — Three.js untuk halaman belajar (3D + jaring-jaring)
-   VERSI FINAL: kubus/balok lipat benar + tabung gulung
+   Versi NON-MODULE (UMD) — pakai THREE global
    ========================================================== */
 (function() {
   let renderer, scene, camera, controls;
@@ -16,7 +16,6 @@
 
   const canvas = document.getElementById('canvas-3d');
   const container = document.getElementById('learn-3d-container');
-
   const SIDE_COLORS = [0xff5252, 0xffb300, 0x66bb6a, 0x29b6f6, 0xab47bc, 0xff7043];
 
   function init() {
@@ -79,22 +78,15 @@
     });
   }
 
-  /* ============================================================
-     SOLID: kubus / balok / tabung / kerucut / bola
-     ============================================================ */
   function buildSolid(shapeKey) {
     if (shapeKey === 'kubus' || shapeKey === 'balok') {
       const W = shapeKey === 'kubus' ? 1 : 1.4;
       const H = shapeKey === 'kubus' ? 1 : 0.8;
       const D = shapeKey === 'kubus' ? 1 : 1.0;
-      // Urutan material BoxGeometry: +X, -X, +Y, -Y, +Z, -Z
       const mats = [
-        mat(SIDE_COLORS[4]), // +X kanan (E)
-        mat(SIDE_COLORS[3]), // -X kiri (D)
-        mat(SIDE_COLORS[1]), // +Y atas (B)
-        mat(SIDE_COLORS[2]), // -Y bawah (C)
-        mat(SIDE_COLORS[0]), // +Z depan (A)
-        mat(SIDE_COLORS[5])  // -Z belakang (F)
+        mat(SIDE_COLORS[4]), mat(SIDE_COLORS[3]),
+        mat(SIDE_COLORS[1]), mat(SIDE_COLORS[2]),
+        mat(SIDE_COLORS[0]), mat(SIDE_COLORS[5])
       ];
       const geom = new THREE.BoxGeometry(W, H, D);
       const mesh = new THREE.Mesh(geom, mats);
@@ -119,17 +111,6 @@
     return mesh;
   }
 
-  /* ============================================================
-     JARING-JARING LIPAT — KUBUS & BALOK
-     ============================================================
-     Konsep: setiap panel yang akan dilipat dibungkus Pivot Group.
-     Pivot berada di TEPI panel induk. Panel anak di-parent ke pivot
-     dengan offset setengah ukuran panel anak.
-
-     Arah lipat: semua panel dilipat KE DEPAN (menjauhi kamera)
-     dengan tanda rotasi yang sesuai.
-     ============================================================ */
-
   function makeMesh(w, h, color) {
     const g = new THREE.PlaneGeometry(w, h);
     const m = new THREE.Mesh(g, mat(color));
@@ -142,17 +123,12 @@
     const W = shapeKey === 'kubus' ? 1 : 1.4;
     const H = shapeKey === 'kubus' ? 1 : 0.8;
     const D = shapeKey === 'kubus' ? 1 : 1.0;
-
     const root = new THREE.Group();
 
-    /* ---------- Panel A: DEPAN (tetap) ---------- */
     const panelA = makeMesh(W, H, SIDE_COLORS[0]);
     panelA.position.set(0, 0, 0);
     root.add(panelA);
 
-    /* ---------- Panel B: ATAS ----------
-       Pivot di tepi atas A. Panel B naik.
-       Rotasi +90° di sumbu X → panel lipat ke depan (naik). */
     const pivotB = new THREE.Group();
     pivotB.position.set(0, H / 2, 0);
     const panelB = makeMesh(W, D, SIDE_COLORS[1]);
@@ -161,9 +137,6 @@
     root.add(pivotB);
     pivots.push({ pivot: pivotB, axis: 'x', target: Math.PI / 2 });
 
-    /* ---------- Panel C: BAWAH ----------
-       Pivot di tepi bawah A. Panel C turun.
-       Rotasi -90° di sumbu X → panel lipat ke depan (turun). */
     const pivotC = new THREE.Group();
     pivotC.position.set(0, -H / 2, 0);
     const panelC = makeMesh(W, D, SIDE_COLORS[2]);
@@ -172,56 +145,43 @@
     root.add(pivotC);
     pivots.push({ pivot: pivotC, axis: 'x', target: -Math.PI / 2 });
 
-    /* ---------- Panel D: KIRI ----------
-       Pivot di tepi kiri A. Panel D ke kiri.
-       Rotasi -90° di sumbu Y → panel lipat ke depan (kiri). */
     const pivotD = new THREE.Group();
     pivotD.position.set(-W / 2, 0, 0);
     const panelD = makeMesh(D, H, SIDE_COLORS[3]);
     panelD.position.set(-D / 2, 0, 0);
     pivotD.add(panelD);
     root.add(pivotD);
-    pivots.push({ pivot: pivotD, axis: 'y', target: -Math.PI / 2 });
+    pivots.push({ pivot: pivotD, axis: 'y', target: Math.PI / 2 });
 
-    /* ---------- Panel E: KANAN ----------
-       Pivot di tepi kanan A. Panel E ke kanan.
-       Rotasi +90° di sumbu Y → panel lipat ke depan (kanan). */
     const pivotE = new THREE.Group();
     pivotE.position.set(W / 2, 0, 0);
     const panelE = makeMesh(D, H, SIDE_COLORS[4]);
     panelE.position.set(D / 2, 0, 0);
     pivotE.add(panelE);
     root.add(pivotE);
-    pivots.push({ pivot: pivotE, axis: 'y', target: Math.PI / 2 });
+    pivots.push({ pivot: pivotE, axis: 'y', target: -Math.PI / 2 });
 
-    /* ---------- Panel F: BELAKANG ----------
-       Anak dari pivotE. Rotasi +90° di sumbu Y. */
     const pivotF = new THREE.Group();
     pivotF.position.set(D, 0, 0);
     const panelF = makeMesh(W, H, SIDE_COLORS[5]);
     panelF.position.set(W / 2, 0, 0);
     pivotF.add(panelF);
     pivotE.add(pivotF);
-    pivots.push({ pivot: pivotF, axis: 'y', target: Math.PI / 2 });
+    pivots.push({ pivot: pivotF, axis: 'y', target: -Math.PI / 2 });
 
     return root;
   }
 
-  /* ============================================================
-     JARING-JARING TABUNG
-     ============================================================ */
   function buildNetTabung() {
     const g = new THREE.Group();
     const r = 1.1, t = 2.4, circ = 2 * Math.PI * r;
 
-    // ---- Selimut: persegi panjang di tengah ----
     const rm = makeMesh(circ, t, SIDE_COLORS[2]);
     rm.position.set(0, 0, 0);
     rm.userData.netKind = 'selimut';
     rm.userData.startPos = rm.position.clone();
     g.add(rm);
 
-    // ---- Alas: lingkaran kiri ----
     const cg = new THREE.CircleGeometry(r, 48);
     const cm1 = new THREE.Mesh(cg, mat(SIDE_COLORS[0]));
     cm1.position.set(-circ / 2 - r - 0.3, 0, 0);
@@ -232,7 +192,6 @@
     cm1.userData.targetPos = new THREE.Vector3(0, t / 2, 0);
     g.add(cm1);
 
-    // ---- Tutup: lingkaran kanan ----
     const cm2 = new THREE.Mesh(cg, mat(SIDE_COLORS[1]));
     cm2.position.set(circ / 2 + r + 0.3, 0, 0);
     cm2.add(new THREE.LineSegments(new THREE.EdgesGeometry(cg),
@@ -245,15 +204,11 @@
     return g;
   }
 
-  /* ============================================================
-     JARING-JARING KERUCUT
-     ============================================================ */
   function buildNetKerucut() {
     const g = new THREE.Group();
     const r = 1.2, t = 2.4, s = Math.sqrt(r * r + t * t);
     const sectorAngle = 2 * Math.PI * r / s;
 
-    // ---- Selimut: juring ----
     const sg = new THREE.CircleGeometry(s, 48, 0, sectorAngle);
     const sm = new THREE.Mesh(sg, mat(SIDE_COLORS[5]));
     sm.position.set(0, 0, 0);
@@ -261,7 +216,6 @@
       new THREE.LineBasicMaterial({ color: 0x213547 })));
     g.add(sm);
 
-    // ---- Alas: lingkaran ----
     const cg = new THREE.CircleGeometry(r, 48);
     const cm = new THREE.Mesh(cg, mat(SIDE_COLORS[0]));
     cm.position.set(-s - 0.4, 0, 0);
@@ -272,9 +226,6 @@
     return g;
   }
 
-  /* ============================================================
-     JARING-JARING BOLA (tidak ada, tampilkan bola transparan)
-     ============================================================ */
   function buildNetBola() {
     const g = new THREE.Group();
     const s = new THREE.Mesh(
@@ -292,52 +243,34 @@
     return g;
   }
 
-  /* ============================================================
-     ANIMASI TABUNG: lingkaran naik/turun, selimut mengecil
-     ============================================================ */
   let tubeAnim = null;
   function startTubeAnimation() {
     if (!netGroup) return;
     const start = performance.now();
     const duration = 2500;
-
-    // reset
     netGroup.children.forEach(c => {
-      if (c.userData.netKind === 'lingkaran') {
-        c.position.copy(c.userData.startPos);
-      } else if (c.userData.netKind === 'selimut') {
-        c.scale.set(1, 1, 1);
-      }
+      if (c.userData.netKind === 'lingkaran') c.position.copy(c.userData.startPos);
+      else if (c.userData.netKind === 'selimut') c.scale.set(1, 1, 1);
     });
-
     function step() {
       if (!netGroup) return;
       const elapsed = performance.now() - start;
       const p = Math.min(elapsed / duration, 1);
       const eased = easeInOut(p);
-
       netGroup.children.forEach(c => {
         if (c.userData.netKind === 'lingkaran') {
           c.position.lerpVectors(c.userData.startPos, c.userData.targetPos, eased);
         } else if (c.userData.netKind === 'selimut') {
-          const sx = 1 - eased * 0.7;
-          c.scale.set(sx, 1, 1);
+          c.scale.set(1 - eased * 0.7, 1, 1);
         }
       });
-
-      if (p < 1) {
-        tubeAnim = requestAnimationFrame(step);
-      } else {
-        tubeAnim = null;
-      }
+      if (p < 1) tubeAnim = requestAnimationFrame(step);
+      else tubeAnim = null;
     }
     if (tubeAnim) cancelAnimationFrame(tubeAnim);
     step();
   }
 
-  /* ============================================================
-     PUBLIC API
-     ============================================================ */
   function start(shapeKey) {
     init();
     onResize();
@@ -380,22 +313,15 @@
     onResize();
     clearSceneObjects();
 
-    // Bangun jaring-jaring sesuai jenis
     if (shapeKey === 'kubus' || shapeKey === 'balok') {
       netGroup = buildNetKubusBalok(shapeKey);
-      // reset pivot
-      pivots.forEach(p => {
-        p.pivot.rotation.x = 0;
-        p.pivot.rotation.y = 0;
-        p.pivot.rotation.z = 0;
-      });
+      pivots.forEach(p => { p.pivot.rotation.x = 0; p.pivot.rotation.y = 0; p.pivot.rotation.z = 0; });
       foldProgress = 0;
       foldAnimating = true;
       camera.position.set(0, 0, 8);
     } else if (shapeKey === 'tabung') {
       netGroup = buildNetTabung();
       camera.position.set(0, 0, 8);
-      // mulai animasi gulung setelah jaring-jaring muncul
       setTimeout(() => startTubeAnimation(), 300);
     } else if (shapeKey === 'kerucut') {
       netGroup = buildNetKerucut();
@@ -415,11 +341,8 @@
   }
 
   function resetView() {
-    if (netGroup) {
-      camera.position.set(0, 0, 8);
-    } else {
-      camera.position.set(3, 3, 5);
-    }
+    if (netGroup) camera.position.set(0, 0, 8);
+    else camera.position.set(3, 3, 5);
     controls.target.set(0, 0, 0);
     controls.update();
   }
@@ -433,19 +356,8 @@
 
   function playFoldAnimation() {
     if (!netGroup) return;
-
-    // Tabung: ulangi animasi gulung
-    if (currentShape === 'tabung') {
-      startTubeAnimation();
-      return;
-    }
-
-    // Kubus/balok: reset pivot & mulai lipat
-    pivots.forEach(p => {
-      p.pivot.rotation.x = 0;
-      p.pivot.rotation.y = 0;
-      p.pivot.rotation.z = 0;
-    });
+    if (currentShape === 'tabung') { startTubeAnimation(); return; }
+    pivots.forEach(p => { p.pivot.rotation.x = 0; p.pivot.rotation.y = 0; p.pivot.rotation.z = 0; });
     camera.position.set(0, 0, 8);
     controls.target.set(0, 0, 0);
     controls.update();
@@ -457,19 +369,12 @@
   function animate() {
     if (!running) return;
     animFrameId = requestAnimationFrame(animate);
-
     if (foldAnimating && pivots.length > 0) {
-      foldProgress += 0.006;  // ~2.8 detik untuk 0→1
-      if (foldProgress >= 1) {
-        foldProgress = 1;
-        foldAnimating = false;
-      }
+      foldProgress += 0.006;
+      if (foldProgress >= 1) { foldProgress = 1; foldAnimating = false; }
       const eased = easeInOut(foldProgress);
-      pivots.forEach(p => {
-        p.pivot.rotation[p.axis] = p.target * eased;
-      });
+      pivots.forEach(p => { p.pivot.rotation[p.axis] = p.target * eased; });
     }
-
     controls.update();
     if (renderer && scene && camera) renderer.render(scene, camera);
   }

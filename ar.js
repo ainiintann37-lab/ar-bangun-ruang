@@ -1,5 +1,5 @@
 /* ==========================================================
-   AR Module — MindAR dengan validasi marker (2 mode)
+   AR Module — MindAR versi UMD (1.1.5) + THREE global
    ========================================================== */
 (function() {
   let mindar = null;
@@ -13,6 +13,13 @@
 
   function createMindAR(containerEl, mode) {
     destroyMindAR();
+
+    if (typeof window.MINDAR === 'undefined' ||
+        !window.MINDAR.IMAGE ||
+        !window.MINDAR.IMAGE.MindARThree) {
+      showError('MindAR tidak termuat. Cek koneksi internet atau CDN MindAR.', mode);
+      return null;
+    }
 
     let instance;
     try {
@@ -60,21 +67,20 @@
   function buildModelFor(key) {
     const S = window.SHAPES[key];
     const color = new THREE.Color(S.warna);
-    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.15 });
+    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.15 });
     let mesh;
     switch (key) {
-      case 'kubus':   mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat); break;
-      case 'balok':   mesh = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 1), mat); break;
-      case 'tabung':  mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.2, 40), mat); break;
-      case 'kerucut': mesh = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.2, 40), mat); break;
-      case 'bola':    mesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 36, 24), mat); break;
+      case 'kubus':   mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), m); break;
+      case 'balok':   mesh = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 1), m); break;
+      case 'tabung':  mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.2, 40), m); break;
+      case 'kerucut': mesh = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.2, 40), m); break;
+      case 'bola':    mesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 36, 24), m); break;
     }
     if (mesh) {
-      const edges = new THREE.LineSegments(
+      mesh.add(new THREE.LineSegments(
         new THREE.EdgesGeometry(mesh.geometry),
         new THREE.LineBasicMaterial({ color: 0x213547 })
-      );
-      mesh.add(edges);
+      ));
     }
     return mesh;
   }
@@ -141,13 +147,13 @@
       if (a) a.group.visible = true;
       updateUI(mode, 'success',
         '✅ Hebat! Kamu berhasil menemukan bangun ruang ' + shapeName(detected) + '!');
-      window.playBeep('ok');
+      if (window.playBeep) window.playBeep('ok');
     } else {
       hideAllAnchors();
       updateUI(mode, 'wrong',
         'Ups! Ini bukan ' + shapeName(selected) + '. Kamu sedang memindai ' + shapeName(detected) +
         '. Ayo cari marker ' + shapeName(selected) + ' yang benar!');
-      window.playBeep('no');
+      if (window.playBeep) window.playBeep('no');
     }
   }
 
@@ -223,7 +229,6 @@
     }
   }
 
-  /* ====== Mode halaman penuh ====== */
   function open(shapeKey) {
     document.getElementById('ar-target-name').textContent = shapeName(shapeKey);
     document.getElementById('ar-instr-shape').textContent = shapeName(shapeKey);
@@ -251,7 +256,6 @@
     }
   }
 
-  /* ====== Mode embed (panel kiri halaman belajar) ====== */
   async function startLearn() {
     const shapeKey = selectedShape();
     if (!shapeKey) return;
@@ -288,7 +292,7 @@
     } else if (e && e.name === 'NotFoundError') {
       msg += 'Kamera tidak ditemukan pada perangkat ini.';
     } else {
-      msg += 'Pastikan situs dibuka melalui HTTPS atau localhost.';
+      msg += (e && e.message) ? e.message : 'Pastikan situs dibuka melalui HTTPS atau localhost.';
     }
     showError(msg, mode);
   }
