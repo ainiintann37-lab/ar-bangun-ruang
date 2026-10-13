@@ -67,26 +67,14 @@ import { MindARThree } from 'mind-ar';
     handlersAttached = false;
   }
 
-  function buildModelFor(key) {
-    const S = window.SHAPES[key];
-    const color = new THREE.Color(S.warna);
-    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.15 });
-    let mesh;
-    switch (key) {
-      case 'kubus':   mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), m); break;
-      case 'balok':   mesh = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 1), m); break;
-      case 'tabung':  mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.2, 40), m); break;
-      case 'kerucut': mesh = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.2, 40), m); break;
-      case 'bola':    mesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 36, 24), m); break;
-    }
-    if (mesh) {
-      mesh.add(new THREE.LineSegments(
-        new THREE.EdgesGeometry(mesh.geometry),
-        new THREE.LineBasicMaterial({ color: 0x213547 })
-      ));
-    }
-    return mesh;
-  }
+function buildModelFor(key) {
+  // KUBUS HIJAU SEDERHANA
+  const geom = new THREE.BoxGeometry(1, 1, 1);
+  const mat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.position.set(0, 0, 0);
+  return mesh;
+}
 
   function buildLabel(text) {
     const canvas = document.createElement('canvas');
