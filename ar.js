@@ -50,7 +50,9 @@ import { MindARThree } from 'mind-ar';
       const anchor = instance.addAnchor(i);
       anchor.group.visible = false;
       anchor.group.add(buildModelFor(key));
-      anchor.group.add(buildLabel(window.SHAPES[key].nama));
+const lbl = buildLabel(window.SHAPES[key].nama);
+lbl.position.set(0, 6, 0);  // 6 satuan di atas — di atas kubus
+anchor.group.add(lbl);
       anchor.userData = { shapeKey: key };
       anchorMap[key] = anchor;
     });
@@ -68,11 +70,27 @@ import { MindARThree } from 'mind-ar';
   }
 
 function buildModelFor(key) {
-  // KUBUS HIJAU SEDERHANA
-  const geom = new THREE.BoxGeometry(1, 1, 1);
-  const mat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-  const mesh = new THREE.Mesh(geom, mat);
-  mesh.position.set(0, 0, 0);
+  const S = window.SHAPES[key];
+  const color = new THREE.Color(S.warna);
+  const m = new THREE.MeshStandardMaterial({
+    color: color, roughness: 0.35, metalness: 0.15, side: THREE.DoubleSide
+  });
+  let mesh;
+  // UKURAN DIPERBESAR 5x
+  switch (key) {
+    case 'kubus':   mesh = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 5), m); break;
+    case 'balok':   mesh = new THREE.Mesh(new THREE.BoxGeometry(7, 4, 5), m); break;
+    case 'tabung':  mesh = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 6, 40), m); break;
+    case 'kerucut': mesh = new THREE.Mesh(new THREE.ConeGeometry(3, 6, 40), m); break;
+    case 'bola':    mesh = new THREE.Mesh(new THREE.SphereGeometry(3.5, 36, 24), m); break;
+  }
+  if (mesh) {
+    mesh.position.y = 3;  // 3 satuan di atas marker (biar tidak tenggelam)
+    mesh.add(new THREE.LineSegments(
+      new THREE.EdgesGeometry(mesh.geometry),
+      new THREE.LineBasicMaterial({ color: 0x213547 })
+    ));
+  }
   return mesh;
 }
 
