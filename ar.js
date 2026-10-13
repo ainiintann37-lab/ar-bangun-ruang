@@ -1,7 +1,10 @@
 /* ==========================================================
    AR Module — MindAR versi UMD (1.1.5) + THREE global
    ========================================================== */
-(function() {
+import * as THREE from 'three';
+import { MindARThree } from 'mind-ar';
+
+   (function() {
   let mindar = null;
   let anchorMap = {};
   let currentMode = null;

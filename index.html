@@ -5,11 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Petualangan Bangun Ruang — Belajar dengan AR</title>
 <link rel="stylesheet" href="style.css" />
-<!-- Three.js r128 (UMD — global THREE + THREE.OrbitControls) -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<!-- MindAR 1.1.5 (UMD — global window.MINDAR) -->
-<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-three.prod.js"></script>
+
+<!-- Import Map: definisi URL untuk "three" dan "mind-ar" -->
+<script type="importmap">
+{
+  "imports": {
+   "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
+"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/",
+    "mind-ar": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -39,9 +45,7 @@
     <h2 class="topbar-title">Pilih Bangun Ruang</h2>
     <div class="topbar-spacer"></div>
   </header>
-
   <div class="menu-grid" id="menu-grid"></div>
-
   <div class="menu-extra">
     <button class="btn btn-secondary" id="btn-open-quiz">📝 Mulai Kuis</button>
   </div>
@@ -60,9 +64,7 @@
   </header>
 
   <div class="learn-wrap">
-    <!-- LEFT: AR + 3D + jaring-jaring -->
     <div class="learn-left" id="learn-left">
-      <!-- Panel AR langsung -->
       <div id="learn-ar-container" class="learn-ar-container">
         <div id="learn-ar-overlay" class="learn-ar-overlay">
           <div class="learn-ar-card">
@@ -70,20 +72,16 @@
             <h3>Ayo Scan Marker <span id="learn-ar-shape">Kubus</span></h3>
             <p>Izinkan kamera, lalu arahkan ke marker <strong id="learn-ar-shape-2">Kubus</strong>.</p>
             <button class="btn btn-primary" id="btn-learn-ar-start">Mulai Kamera</button>
-            <p class="learn-ar-note">Belum punya marker? Klik <em>Bentuk 3D</em> atau <em>Jaring-Jaring</em> di bawah.</p>
+            <p class="learn-ar-note">Belum punya marker? Klik <em>Bentuk 3D</em> atau <em>Jaring-Jaring</em>.</p>
           </div>
         </div>
         <div id="learn-ar-badge" class="learn-ar-badge hidden"></div>
         <div id="learn-ar-hint" class="learn-ar-hint hidden">🔍 Arahkan ke marker…</div>
       </div>
-
-      <!-- Panel 3D Three.js -->
       <div id="learn-3d-container" class="learn-3d-container hidden">
         <canvas id="canvas-3d"></canvas>
         <div class="canvas-hint">🖱️ Geser untuk memutar · Gulir untuk zoom</div>
       </div>
-
-      <!-- Kontrol bawah -->
       <div class="canvas-controls">
         <button class="btn btn-small" id="btn-view-ar">📷 Kamera AR</button>
         <button class="btn btn-small" id="btn-view-solid">🔷 Bentuk 3D</button>
@@ -97,8 +95,6 @@
         <button class="btn btn-small" id="btn-back-3d">🔷 Kembali ke Bentuk 3D</button>
       </div>
     </div>
-
-    <!-- RIGHT: materi -->
     <div class="learn-right" id="learn-material"></div>
   </div>
 </section>
@@ -111,7 +107,6 @@
     <h2 class="topbar-title">Kuis Bangun Ruang</h2>
     <div class="topbar-spacer"></div>
   </header>
-
   <div class="quiz-wrap">
     <div id="quiz-header">
       <span id="quiz-progress">Pertanyaan 1 / 10</span>
@@ -139,7 +134,6 @@
     <h2 class="topbar-title">Mode AR — <span id="ar-target-name">Kubus</span></h2>
     <button class="btn btn-icon" id="btn-ar-help">❓</button>
   </header>
-
   <div id="ar-container">
     <div id="ar-overlay-instructions" class="ar-overlay">
       <div class="ar-card">
@@ -154,7 +148,6 @@
         <button class="btn btn-secondary" id="btn-ar-cancel">Batal</button>
       </div>
     </div>
-
     <div id="ar-overlay-wrong" class="ar-overlay hidden">
       <div class="ar-card ar-card-warn">
         <div class="warn-icon">⚠️</div>
@@ -164,10 +157,8 @@
         <button class="btn btn-secondary" id="btn-ar-back-menu">⬅️ Kembali ke Pilihan</button>
       </div>
     </div>
-
     <div id="ar-overlay-success" class="ar-badge hidden"></div>
     <div id="ar-overlay-scan" class="ar-scan-hint">🔍 Arahkan ke marker…</div>
-
     <div id="ar-error" class="ar-overlay hidden">
       <div class="ar-card ar-card-warn">
         <h3>Kamera Tidak Dapat Digunakan</h3>
@@ -178,10 +169,10 @@
   </div>
 </section>
 
-<!-- ================= SCRIPT (Non-Module) ================= -->
-<script src="script.js"></script>
-<script src="shape3d.js"></script>
-<script src="ar.js"></script>
-<script src="quiz.js"></script>
+<!-- ============ MODULE SCRIPTS ============ -->
+<script type="module" src="script.js"></script>
+<script type="module" src="shape3d.js"></script>
+<script type="module" src="ar.js"></script>
+<script type="module" src="quiz.js"></script>
 </body>
 </html>

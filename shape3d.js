@@ -2,7 +2,9 @@
    Scene3D — Three.js untuk halaman belajar (3D + jaring-jaring)
    Versi NON-MODULE (UMD) — pakai THREE global
    ========================================================== */
-(function() {
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+   (function() {
   let renderer, scene, camera, controls;
   let currentMesh = null;
   let netGroup = null;
