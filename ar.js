@@ -137,28 +137,59 @@ import { MindARThree } from 'mind-ar';
     Object.values(anchorMap).forEach(a => { a.group.visible = false; });
   }
 
-  function handleDetection(detected, mode) {
-    const selected = selectedShape();
-    if (!selected) {
-      updateUI(mode, 'wrong', 'Belum ada bangun ruang yang dipilih.');
-      hideAllAnchors();
-      return;
-    }
-    if (detected === selected) {
-      hideAllAnchors();
-      const a = anchorMap[detected];
-      if (a) a.group.visible = true;
-      updateUI(mode, 'success',
-        '✅ Hebat! Kamu berhasil menemukan bangun ruang ' + shapeName(detected) + '!');
-      if (window.playBeep) window.playBeep('ok');
-    } else {
-      hideAllAnchors();
-      updateUI(mode, 'wrong',
-        'Ups! Ini bukan ' + shapeName(selected) + '. Kamu sedang memindai ' + shapeName(detected) +
-        '. Ayo cari marker ' + shapeName(selected) + ' yang benar!');
-      if (window.playBeep) window.playBeep('no');
-    }
+function handleDetection(detected, mode) {
+  console.log('🎯 DETECTED:', detected, '| SELECTED:', selectedShape());
+  const selected = selectedShape();
+  if (!selected) {
+    updateUI(mode, 'wrong', 'Belum ada bangun ruang yang dipilih.');
+    hideAllAnchors();
+    return;
   }
+  if (detected === selected) {
+    hideAllAnchors();
+    const a = anchorMap[detected];
+    
+    console.log('🔍 Anchor:', a);
+    if (a) {
+      console.log('🔍 Group visible BEFORE:', a.group.visible);
+      a.group.visible = true;
+      console.log('🔍 Group visible AFTER:', a.group.visible);
+      console.log('🔍 Group children count:', a.group.children.length);
+      
+      a.group.children.forEach((child, i) => {
+        console.log(`  [${i}] type:`, child.type);
+        console.log(`      position:`, child.position.x.toFixed(2), child.position.y.toFixed(2), child.position.z.toFixed(2));
+        console.log(`      scale:`, child.scale.x, child.scale.y, child.scale.z);
+        console.log(`      visible:`, child.visible);
+        if (child.geometry) {
+          console.log(`      geometry:`, child.geometry.type);
+          child.geometry.computeBoundingBox();
+          const bb = child.geometry.boundingBox;
+          console.log(`      size:`, 
+            (bb.max.x - bb.min.x).toFixed(2),
+            (bb.max.y - bb.min.y).toFixed(2),
+            (bb.max.z - bb.min.z).toFixed(2)
+          );
+        }
+        if (child.material) {
+          console.log(`      material color:`, child.material.color ? child.material.color.getHexString() : 'N/A');
+          console.log(`      material opacity:`, child.material.opacity);
+          console.log(`      material visible:`, child.material.visible);
+        }
+      });
+    }
+    
+    updateUI(mode, 'success',
+      '✅ Hebat! Kamu berhasil menemukan bangun ruang ' + shapeName(detected) + '!');
+    if (window.playBeep) window.playBeep('ok');
+  } else {
+    hideAllAnchors();
+    updateUI(mode, 'wrong',
+      'Ups! Ini bukan ' + shapeName(selected) + '. Kamu sedang memindai ' + shapeName(detected) +
+      '. Ayo cari marker ' + shapeName(selected) + ' yang benar!');
+    if (window.playBeep) window.playBeep('no');
+  }
+}
 
   function updateUI(mode, state, msg) {
     if (mode === 'page') {
